@@ -29,12 +29,17 @@ function getNonRestDays() {
 }
 
 function getMissingDays(nonRestDays) {
-  return Array.from(nonRestDays).filter(tr => tr.querySelector('.missing').innerText === '+');
+  return Array.from(nonRestDays).filter(tr => {
+    const statusText = tr.querySelector('.status').innerText.toLowerCase();
+    const isHoliday = statusText.includes('holiday') || statusText.includes('eve');
+    const isMissing = tr.querySelector('.missing')?.innerText === '+';
+    return isMissing && !isHoliday;
+  });
 }
 
 function getRandomTime(startHour, endHour) {
   const hour = Math.floor(Math.random() * (endHour - startHour + 1)) + startHour;
-  const minutes = Math.floor(Math.random() * 2) * 30; // 0 or 30 minutes for simplicity
+  const minutes = Math.random() < 0.5 ? 0 : 30; // Randomly pick 0 or 30 minutes
   return `${String(hour).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
 }
 
@@ -43,8 +48,8 @@ async function submitHours(day) {
   const insertRow = await waitFor('tr.insert-row');
 
   // Generate random check-in and check-out times
-  const checkInTime = getRandomTime(7, 8); // Random time between 07:00-08:00
-  const checkOutTime = getRandomTime(17, 18); // Random time between 17:00-19:00
+  const checkInTime = getRandomTime(7, 8); // Random time between 07:30-08:30
+  const checkOutTime = getRandomTime(17, 18); // Random time between 17:00-18:00
 
   insertRow.querySelector('input.checkin-str').value = checkInTime;
   insertRow.querySelector('input.checkout-str').value = checkOutTime;
