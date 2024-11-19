@@ -40,7 +40,7 @@ const adjustForHours = (checkIn, checkOut, minHours = 9.25, maxHours = 11.5) => 
 
   if (totalMinutes < minMinutes || totalMinutes > maxMinutes) {
     const adjustedMinutes = checkIn.hour * 60 + checkIn.minutes + 
-      (totalMinutes < minMinutes ? minMinutes : maxMinutes);
+      (totalMinutes < minMinutes? minMinutes : maxMinutes);
     return {
       hour: Math.floor(adjustedMinutes / 60),
       minutes: adjustedMinutes % 60
@@ -50,27 +50,27 @@ const adjustForHours = (checkIn, checkOut, minHours = 9.25, maxHours = 11.5) => 
 };
 
 const submitHours = async day => {
-  const dayText = day.innerText.trim();
-  if (/Holiday$/i.test(dayText)) return;
-
-  const isHolidayEve = /Holiday Eve/i.test(dayText);
-
   try {
+    const dayText = day.innerText.trim();
+    if (/Holiday$/i.test(dayText)) return;
+
+    const isHolidayEve = /Holiday Eve/i.test(dayText);
+
     day.querySelector("a.insert-row").click();
     const insertRow = await waitFor("tr.insert-row");
 
     const checkIn = getRandomTime(7, 8);
     let checkOut = isHolidayEve 
-      ? getRandomTime(13, 14) 
+     ? getRandomTime(13, 14) 
       : adjustForHours(checkIn, getRandomTime(17, 18));
 
     insertRow.querySelector("input.checkin-str").value = formatTime(checkIn);
     insertRow.querySelector("input.checkout-str").value = formatTime(checkOut);
     insertRow.querySelector("button.inline-confirm").click();
 
-    await sleep(1000);
+    await sleep(1000); // Wait for UI to update
   } catch (error) {
-    console.error(`Error processing day ${dayText}:`, error);
+    console.error(`Error processing day ${day.innerText.trim()}:`, error);
   }
 };
 
@@ -80,6 +80,17 @@ const fillMonth = async () => {
     do {
       nonRestDays = getNonRestDays();
       missingDays = getMissingDays(nonRestDays);
-      if (missingDays.length) await submitHours(missingDays[0]);
+      if (missingDays.length) {
+        await submitHours(missingDays[0]);
+        // Ensure we don't overload the browser by processing one day at a time
+        await sleep(2000); // Wait 2 seconds before processing the next day
+      }
     } while (missingDays.length);
-    console.log("All mis
+    console.log("All missing days have been filled.");
+  } catch (error) {
+    console.error("An error occurred while filling the month:", error);
+  }
+};
+
+// To use the script, run:
+// await fillMonth();
