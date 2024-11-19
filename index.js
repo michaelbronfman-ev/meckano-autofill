@@ -1,9 +1,8 @@
 /**
- * Meckano Auto-fill Script v1.2
- * 1. Fills all missing non-rest days with randomized times.
- * 2. Regular days: Check-in 7:30 to 8:30, check-out ensures total hours >= 9:15.
- * 3. Holiday Eve: Check-in 7:30 to 8:30, check-out between 13:30 and 14:30.
- * 4. Holidays are ignored.
+ * Meckano Auto-fill Script v1.3 (Enhanced Times)
+ * - Regular days: Check-in 07:30 to 08:30, total hours between 9:15 and 11:30.
+ * - Holiday Eve: Check-in 07:30 to 08:30, check-out 13:30 to 14:30 (6:00 to 6:30 total hours).
+ * - Holidays: Skipped.
  */
 
 function sleep(ms) {
@@ -53,12 +52,17 @@ function calculateTotalMinutes(checkIn, checkOut) {
   return checkOutMinutes - checkInMinutes;
 }
 
-function adjustForMinimumHours(checkIn, checkOut, minHours = 9.25) {
+function adjustForHours(checkIn, checkOut, minHours = 9.25, maxHours = 11.5) {
   const totalMinutes = calculateTotalMinutes(checkIn, checkOut);
-  const requiredMinutes = minHours * 60;
+  const minMinutes = minHours * 60;
+  const maxMinutes = maxHours * 60;
 
-  if (totalMinutes < requiredMinutes) {
-    const adjustedMinutes = checkIn.hour * 60 + checkIn.minutes + requiredMinutes;
+  if (totalMinutes < minMinutes) {
+    const adjustedMinutes = checkIn.hour * 60 + checkIn.minutes + minMinutes;
+    checkOut.hour = Math.floor(adjustedMinutes / 60);
+    checkOut.minutes = adjustedMinutes % 60;
+  } else if (totalMinutes > maxMinutes) {
+    const adjustedMinutes = checkIn.hour * 60 + checkIn.minutes + maxMinutes;
     checkOut.hour = Math.floor(adjustedMinutes / 60);
     checkOut.minutes = adjustedMinutes % 60;
   }
@@ -88,7 +92,7 @@ async function submitHours(day) {
   } else {
     // Regular Days: Check-out 17:00 to 18:30
     checkOut = getRandomTime(17, 18);
-    checkOut = adjustForMinimumHours(checkIn, checkOut, 9.25); // Ensure at least 9:15 hours total
+    checkOut = adjustForHours(checkIn, checkOut, 9.25, 11.5); // Ensure 9:15 to 11:30 hours total
   }
 
   const formattedCheckIn = formatTime(checkIn);
