@@ -23,10 +23,20 @@ function getNonRestDays() {
 
 function getMissingDays(nonRestDays) {
   return Array.from(nonRestDays).filter(tr => {
-    const statusText = tr.querySelector('.status')?.innerText.toLowerCase();
+    const statusText = tr.querySelector('.status')?.innerText.trim().toLowerCase();
     const hasExistingTimes = tr.querySelector('.checkin')?.innerText.trim() !== '';
     const isHoliday = statusText?.includes('holiday') && !statusText?.includes('eve');
     const isMissing = tr.querySelector('.missing')?.innerText === '+';
+
+    // Debugging information
+    console.log({
+      statusText,
+      hasExistingTimes,
+      isHoliday,
+      isMissing,
+      day: tr.querySelector('.date')?.innerText
+    });
+
     return isMissing && !isHoliday && !hasExistingTimes;
   });
 }
@@ -38,7 +48,7 @@ function getRandomTime(startHour, endHour) {
 }
 
 async function submitHours(day) {
-  const statusText = day.querySelector('.status')?.innerText.toLowerCase();
+  const statusText = day.querySelector('.status')?.innerText.trim().toLowerCase();
   day.querySelector('a.insert-row').click();
   const insertRow = await waitFor('tr.insert-row');
 
@@ -65,6 +75,7 @@ async function fillMonth() {
   let nonRestDays = getNonRestDays();
   let missingDays = getMissingDays(nonRestDays);
   while (missingDays.length > 0) {
+    console.log(`Filling for day: ${missingDays[0].querySelector('.date')?.innerText}`);
     await submitHours(missingDays[0]);
     nonRestDays = getNonRestDays();
     missingDays = getMissingDays(nonRestDays);
