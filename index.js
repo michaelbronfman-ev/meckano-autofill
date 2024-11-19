@@ -34,28 +34,13 @@ function getCheckInTime(isHolidayEve) {
   return getRandomTime(7, 8, 30, 59);
 }
 
-function getCheckOutTime(isHolidayEve, checkInTime) {
+function getCheckOutTime(isHolidayEve) {
   if (isHolidayEve) {
     // 13:30 - 14:30 for Holiday Eve
     return getRandomTime(13, 14, 30, 59);
   } else {
-    // Ensure total hours are between 9 and 11:30 for regular days
-    const [checkInHour, checkInMinutes] = checkInTime.split(':').map(Number);
-    const minHours = 9; // 9 hours
-    const maxHours = 11.5; // 11 hours and 30 minutes
-
-    const minCheckOutMinutes = checkInHour * 60 + checkInMinutes + minHours * 60;
-    const maxCheckOutMinutes = checkInHour * 60 + checkInMinutes + maxHours * 60;
-
-    const checkOutMinutes = Math.floor(
-      Math.random() * (maxCheckOutMinutes - minCheckOutMinutes + 1) +
-        minCheckOutMinutes
-    );
-
-    const checkOutHour = Math.floor(checkOutMinutes / 60);
-    const checkOutMinute = checkOutMinutes % 60;
-
-    return `${String(checkOutHour).padStart(2, '0')}:${String(checkOutMinute).padStart(2, '0')}`;
+    // 17:00 - 18:30 for regular days
+    return getRandomTime(17, 18, 0, 30);
   }
 }
 
@@ -75,7 +60,7 @@ async function submitHours(day) {
 
   // Generate check-in and check-out times
   const checkInTime = getCheckInTime(isHolidayEve);
-  const checkOutTime = getCheckOutTime(isHolidayEve, checkInTime);
+  const checkOutTime = getCheckOutTime(isHolidayEve);
 
   insertRow.querySelector('input.checkin-str').value = checkInTime;
   insertRow.querySelector('input.checkout-str').value = checkOutTime;
