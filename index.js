@@ -1,11 +1,5 @@
-/**
-1. Go to your current monthly report page on Meckano.
-2. Inject this script into the browser's console.
-3. Run `await fillMonth()` to autofill missing non-rest days.
-*/
-
 function sleep(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
+  return new Promise(resolve => setTimeout(resolve, ms));
 }
 
 async function waitFor(selector, parent = document) {
@@ -28,62 +22,52 @@ function getNonRestDays() {
 }
 
 function getMissingDays(nonRestDays) {
-  return Array.from(nonRestDays).filter(
-    (tr) =>
-      tr.querySelector('.missing') &&
-      tr.querySelector('.missing').innerText === '+' &&
-      !tr.innerText.includes('Holiday') // Skip Holidays
-  );
+  return Array.from(nonRestDays).filter(tr => tr.querySelector('.missing').innerText === '+');
 }
 
-function getRandomTimeWithMinutes(startHour, endHour, fixedMinutes = [0, 30], allowHalfExtra = false) {
-  let hour = Math.floor(Math.random() * (endHour - startHour + 1)) + startHour;
+function getRandomTime(startHour, endHour, startMinutes, endMinutes) {
+  const hour = Math.floor(Math.random() * (endHour - startHour + 1)) + startHour;
 
-  // Add logic for extending to 30 minutes into the next hour
-  if (allowHalfExtra && hour === endHour) {
-    const extraMinutes = Math.random() < 0.5 ? 30 : 0;
-    return `${String(hour).padStart(2, '0')}:${String(extraMinutes).padStart(2, '0')}`;
+  // Ensure the time falls between the specified range
+  if (hour === startHour) {
+    return `${String(hour).padStart(2, '0')}:${startMinutes}`;
   }
 
-  const minutes = fixedMinutes[Math.floor(Math.random() * fixedMinutes.length)];
+  const minutes = Math.floor(Math.random() * (endMinutes - startMinutes + 1)) + startMinutes;
   return `${String(hour).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
 }
 
-async function submitHours(day) {
-  const isHolidayEve = day.innerText.includes('Holiday Eve'); // Check if the row is a "Holiday Eve"
+function getCheckInTime() {
+  return getRandomTime(7, 8, 30, 0); // Always between 7:30 and 8:30
+}
 
+function getCheckOutTime() {
+  return getRandomTime(17, 18, 0, 30); // Always between 17:00 and 18:30
+}
+
+async function submitHours(day) {
   day.querySelector('a.insert-row').click();
   const insertRow = await waitFor('tr.insert-row');
 
-  // Randomize check-in and check-out times
-  const checkInTime = getRandomTimeWithMinutes(7, 8, [30, 0]); // Check-in between 7:30 and 8:30
-
-  let checkOutTime;
-  if (isHolidayEve) {
-    // Special handling for Holiday Eve: Check-out between 13:30 and 14:30
-    checkOutTime = getRandomTimeWithMinutes(13, 14, [0, 30]);
-  } else {
-    // Regular days: Check-out between 17:00 and 18:30
-    checkOutTime = getRandomTimeWithMinutes(17, 18, [0, 30], true);
-  }
+  // Generate random check-in and check-out times
+  const checkInTime = getCheckInTime();
+  const checkOutTime = getCheckOutTime();
 
   insertRow.querySelector('input.checkin-str').value = checkInTime;
   insertRow.querySelector('input.checkout-str').value = checkOutTime;
   insertRow.querySelector('button.inline-confirm').click();
 
-  await sleep(1000); // Wait for the UI to update
+  await sleep(1000); // Wait for a second to let the UI update
 }
 
 async function fillMonth() {
   let nonRestDays = getNonRestDays();
   let missingDays = getMissingDays(nonRestDays);
-
   while (missingDays.length > 0) {
     await submitHours(missingDays[0]);
     nonRestDays = getNonRestDays();
     missingDays = getMissingDays(nonRestDays);
   }
-
   console.log('All missing days have been filled.');
 }
 
