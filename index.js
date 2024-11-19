@@ -69,7 +69,7 @@ javascript:(function(){
       insertRow.querySelector("input.checkout-str").value = formatTime(checkOut);
       insertRow.querySelector("button.inline-confirm").click();
 
-      await sleep(1000); // Wait for UI to update
+      await sleep(500); // Wait for UI to update
     } catch (error) {
       console.error(`Error processing day ${dayText}:`, error);
     }
@@ -84,7 +84,7 @@ javascript:(function(){
         if (missingDays.length) {
           await submitHours(missingDays[0]);
           // Ensure we don't overload the browser by processing one day at a time
-          await sleep(2000); // Wait 2 seconds before processing the next day
+          await sleep(200); // Wait 2 seconds before processing the next day
         }
       } while (missingDays.length);
       console.log("All missing days have been filled.");
