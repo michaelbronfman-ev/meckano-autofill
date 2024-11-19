@@ -38,15 +38,33 @@ function getMissingDays(nonRestDays) {
 function getRandomTime(startHour, endHour) {
   const hour = Math.floor(Math.random() * (endHour - startHour + 1)) + startHour;
   const minutes = Math.floor(Math.random() * 2) * 30; // Randomize 0 or 30 minutes
+  return { hour, minutes };
+}
+
+function formatTime({ hour, minutes }) {
   return `${String(hour).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
 }
 
+function ensureMinHours(checkIn, checkOut, minHours = 9.25) {
+  const checkInMinutes = checkIn.hour * 60 + checkIn.minutes;
+  const checkOutMinutes = checkOut.hour * 60 + checkOut.minutes;
+  const totalMinutes = checkOutMinutes - checkInMinutes;
+
+  if (totalMinutes < minHours * 60) {
+    const adjustedMinutes = checkInMinutes + minHours * 60;
+    checkOut.hour = Math.floor(adjustedMinutes / 60);
+    checkOut.minutes = adjustedMinutes % 60;
+  }
+  return checkOut;
+}
+
 async function submitHours(day) {
-  const isHolidayEve = day.innerText.includes("Holiday Eve"); // Check if it's Holiday Eve
-  const isHoliday = day.innerText.includes("Holiday"); // Ignore holidays
+  const dayText = day.innerText.trim();
+  const isHolidayEve = /Holiday Eve/i.test(dayText); // Check if it's Holiday Eve
+  const isHoliday = /Holiday$/i.test(dayText); // Ignore holidays
 
   if (isHoliday) {
-    console.log("Skipping holiday:", day.innerText.trim());
+    console.log("Skipping holiday:", dayText);
     return;
   }
 
@@ -54,20 +72,24 @@ async function submitHours(day) {
   const insertRow = await waitFor("tr.insert-row");
 
   // Generate check-in and check-out times
-  const checkInTime = getRandomTime(7, 8); // Check-in: 7:30 to 8:30
-  let checkOutTime;
+  const checkIn = getRandomTime(7, 8); // Check-in: 07:30 to 08:30
+  let checkOut;
 
   if (isHolidayEve) {
     // Holiday Eve: Check-out 13:30 to 14:30
-    checkOutTime = getRandomTime(13, 14);
+    checkOut = getRandomTime(13, 14);
   } else {
     // Regular Days: Check-out 17:00 to 18:30
-    checkOutTime = getRandomTime(17, 18);
+    checkOut = getRandomTime(17, 18);
+    checkOut = ensureMinHours(checkIn, checkOut, 9.25); // Ensure at least 9:15 hours total
   }
 
+  const formattedCheckIn = formatTime(checkIn);
+  const formattedCheckOut = formatTime(checkOut);
+
   // Update the fields
-  insertRow.querySelector("input.checkin-str").value = checkInTime;
-  insertRow.querySelector("input.checkout-str").value = checkOutTime;
+  insertRow.querySelector("input.checkin-str").value = formattedCheckIn;
+  insertRow.querySelector("input.checkout-str").value = formattedCheckOut;
   insertRow.querySelector("button.inline-confirm").click();
 
   await sleep(1000); // Wait for UI to update
