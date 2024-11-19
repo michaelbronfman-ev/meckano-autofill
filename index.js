@@ -1,10 +1,3 @@
-/**
-1. Go to your current monthly report: https://app.meckano.co.il/#report/21-06-2022/20-07-2022
-2. Inject this script into the page
-3. Run `await fillMonth()`
-4. Watch the script filling your entire missing non-rest days with randomized values
-*/
-
 function sleep(ms) {
   return new Promise(resolve => setTimeout(resolve, ms));
 }
@@ -30,10 +23,11 @@ function getNonRestDays() {
 
 function getMissingDays(nonRestDays) {
   return Array.from(nonRestDays).filter(tr => {
-    const statusText = tr.querySelector('.status').innerText.toLowerCase();
-    const isHoliday = statusText.includes('holiday') || statusText.includes('eve');
+    const statusText = tr.querySelector('.status')?.innerText.toLowerCase();
+    const hasExistingTimes = tr.querySelector('.checkin')?.innerText.trim() !== '';
+    const isHoliday = statusText?.includes('holiday') && !statusText?.includes('eve');
     const isMissing = tr.querySelector('.missing')?.innerText === '+';
-    return isMissing && !isHoliday;
+    return isMissing && !isHoliday && !hasExistingTimes;
   });
 }
 
@@ -44,12 +38,21 @@ function getRandomTime(startHour, endHour) {
 }
 
 async function submitHours(day) {
+  const statusText = day.querySelector('.status')?.innerText.toLowerCase();
   day.querySelector('a.insert-row').click();
   const insertRow = await waitFor('tr.insert-row');
 
-  // Generate random check-in and check-out times
-  const checkInTime = getRandomTime(7, 8); // Random time between 07:30-08:30
-  const checkOutTime = getRandomTime(17, 18); // Random time between 17:00-18:00
+  let checkInTime, checkOutTime;
+
+  if (statusText.includes('eve')) {
+    // Holiday Eve: Special check-out time range
+    checkInTime = getRandomTime(7, 8); // Random time between 07:30–08:30
+    checkOutTime = getRandomTime(13, 14); // Random time between 13:30–14:30
+  } else {
+    // Regular day: Default time ranges
+    checkInTime = getRandomTime(7, 8); // Random time between 07:30–08:30
+    checkOutTime = getRandomTime(17, 18); // Random time between 17:00–18:00
+  }
 
   insertRow.querySelector('input.checkin-str').value = checkInTime;
   insertRow.querySelector('input.checkout-str').value = checkOutTime;
