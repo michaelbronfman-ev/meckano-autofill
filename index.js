@@ -22,17 +22,18 @@ function getNonRestDays() {
 }
 
 function getMissingDays(nonRestDays) {
-  return Array.from(nonRestDays).filter(tr => {
-    const isMissing = tr.querySelector('.missing')?.innerText === '+';
-    const isHoliday = tr.innerText.includes('Holiday');
-    const isHolidayEve = tr.innerText.includes('Holiday Eve');
-    return isMissing && (!isHoliday || isHolidayEve); // Include Holiday Eve, exclude Holidays
-  });
+  return Array.from(nonRestDays).filter(tr => tr.querySelector('.missing').innerText === '+');
 }
 
-function getRandomTime(startHour, endHour) {
-  const hour = Math.floor(Math.random() * (endHour - startHour + 1)) + startHour;
-  const minutes = Math.floor(Math.random() * 2) * 30; // 0 or 30 minutes
+function getRandomTimeInRange(startHour, startMinute, endHour, endMinute) {
+  const totalStartMinutes = startHour * 60 + startMinute;
+  const totalEndMinutes = endHour * 60 + endMinute;
+  const randomMinutes =
+    Math.floor(Math.random() * (totalEndMinutes - totalStartMinutes + 1)) +
+    totalStartMinutes;
+
+  const hour = Math.floor(randomMinutes / 60);
+  const minutes = randomMinutes % 60;
   return `${String(hour).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
 }
 
@@ -40,9 +41,15 @@ async function submitHours(day) {
   day.querySelector('a.insert-row').click();
   const insertRow = await waitFor('tr.insert-row');
 
-  // Generate random check-in and check-out times
-  const checkInTime = getRandomTime(7, 8); // Random time between 07:30-08:30
-  const checkOutTime = getRandomTime(17, 18); // Random time between 17:00-18:30
+  // Generate random check-in and check-out times within the defined range
+  const checkInTime = getRandomTimeInRange(7, 30, 8, 30); // 07:30–08:30
+  const totalHours = Math.random() * (11.5 - 9) + 9; // Random total hours between 9–11:30
+  const checkOutTime = getRandomTimeInRange(
+    parseInt(checkInTime.split(':')[0], 10) + Math.floor(totalHours),
+    parseInt(checkInTime.split(':')[1], 10),
+    18,
+    30
+  );
 
   insertRow.querySelector('input.checkin-str').value = checkInTime;
   insertRow.querySelector('input.checkout-str').value = checkOutTime;
@@ -61,3 +68,6 @@ async function fillMonth() {
   }
   console.log('All missing days have been filled.');
 }
+
+// To use the script, run:
+// await fillMonth();
