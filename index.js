@@ -1,7 +1,9 @@
 /**
- * 1. Inject this script into the page or use a bookmarklet.
- * 2. Run `await fillMonth()` in the console.
- * 3. It will fill all missing non-rest days with randomized times based on the logic provided.
+ * Meckano Auto-fill Script v1.2
+ * 1. Fills all missing non-rest days with randomized times.
+ * 2. Regular days: Check-in 7:30 to 8:30, check-out ensures total hours >= 9:15.
+ * 3. Holiday Eve: Check-in 7:30 to 8:30, check-out between 13:30 and 14:30.
+ * 4. Holidays are ignored.
  */
 
 function sleep(ms) {
@@ -45,13 +47,18 @@ function formatTime({ hour, minutes }) {
   return `${String(hour).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
 }
 
-function ensureMinHours(checkIn, checkOut, minHours = 9.25) {
+function calculateTotalMinutes(checkIn, checkOut) {
   const checkInMinutes = checkIn.hour * 60 + checkIn.minutes;
   const checkOutMinutes = checkOut.hour * 60 + checkOut.minutes;
-  const totalMinutes = checkOutMinutes - checkInMinutes;
+  return checkOutMinutes - checkInMinutes;
+}
 
-  if (totalMinutes < minHours * 60) {
-    const adjustedMinutes = checkInMinutes + minHours * 60;
+function adjustForMinimumHours(checkIn, checkOut, minHours = 9.25) {
+  const totalMinutes = calculateTotalMinutes(checkIn, checkOut);
+  const requiredMinutes = minHours * 60;
+
+  if (totalMinutes < requiredMinutes) {
+    const adjustedMinutes = checkIn.hour * 60 + checkIn.minutes + requiredMinutes;
     checkOut.hour = Math.floor(adjustedMinutes / 60);
     checkOut.minutes = adjustedMinutes % 60;
   }
@@ -81,7 +88,7 @@ async function submitHours(day) {
   } else {
     // Regular Days: Check-out 17:00 to 18:30
     checkOut = getRandomTime(17, 18);
-    checkOut = ensureMinHours(checkIn, checkOut, 9.25); // Ensure at least 9:15 hours total
+    checkOut = adjustForMinimumHours(checkIn, checkOut, 9.25); // Ensure at least 9:15 hours total
   }
 
   const formattedCheckIn = formatTime(checkIn);
