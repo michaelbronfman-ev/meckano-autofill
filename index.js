@@ -44,7 +44,7 @@ async function submitHours(day) {
 
   // Generate random check-in and check-out times
   const checkInTime = getRandomTime(7, 8); // Random time between 07:00-08:00
-  const checkOutTime = getRandomTime(17, 19); // Random time between 17:00-19:00
+  const checkOutTime = getRandomTime(17, 18); // Random time between 17:00-19:00
 
   insertRow.querySelector('input.checkin-str').value = checkInTime;
   insertRow.querySelector('input.checkout-str').value = checkOutTime;
