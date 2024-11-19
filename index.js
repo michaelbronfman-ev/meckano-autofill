@@ -25,12 +25,13 @@ function getMissingDays(nonRestDays) {
   return Array.from(nonRestDays).filter(tr => {
     const isMissing = tr.querySelector('.missing')?.innerText === '+';
     const isHoliday = tr.innerText.includes('Holiday');
-    return isMissing && !isHoliday; // Ignore holidays
+    const isHolidayEve = tr.innerText.includes('Holiday Eve');
+    return isMissing && (!isHoliday || isHolidayEve); // Include Holiday Eve, exclude other Holidays
   });
 }
 
 function getCheckInTime(isHolidayEve) {
-  // 7:30 - 8:30 for all days
+  // Check-in: 7:30 - 8:30 for regular days and Holiday Eve
   return getRandomTime(7, 8, 30, 59);
 }
 
@@ -94,7 +95,7 @@ async function fillMonth() {
     missingDays = getMissingDays(nonRestDays);
   }
 
-  console.log('All missing days have been filled.');
+  console.log('All missing days (including Holiday Eve) have been filled.');
 }
 
 // To use the script, run:
