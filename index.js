@@ -1,5 +1,11 @@
+/**
+ * 1. Inject this script into the page or use a bookmarklet.
+ * 2. Run `await fillMonth()` in the console.
+ * 3. It will fill all missing non-rest days with randomized times based on the logic provided.
+ */
+
 function sleep(ms) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function waitFor(selector, parent = document) {
@@ -17,56 +23,54 @@ async function waitFor(selector, parent = document) {
 
 function getNonRestDays() {
   return document.querySelectorAll(
-    'table.employee-report > tbody > tr[data-report_data_id]:not(.highlightingRestDays)'
+    "table.employee-report > tbody > tr[data-report_data_id]:not(.highlightingRestDays)"
   );
 }
 
 function getMissingDays(nonRestDays) {
-  return Array.from(nonRestDays).filter(tr => {
-    const isMissing = tr.querySelector('.missing')?.innerText === '+';
-    const isHoliday = tr.innerText.includes('Holiday');
-    return isMissing && !isHoliday; // Ignore holidays
-  });
+  return Array.from(nonRestDays).filter(
+    (tr) =>
+      tr.querySelector(".missing") &&
+      tr.querySelector(".missing").innerText === "+"
+  );
 }
 
-function getCheckInTime(isHolidayEve) {
-  // 7:30 - 8:30 for all days
-  return getRandomTime(7, 8, 30, 59);
-}
-
-function getCheckOutTime(isHolidayEve) {
-  if (isHolidayEve) {
-    // 13:30 - 14:30 for Holiday Eve
-    return getRandomTime(13, 14, 30, 59);
-  } else {
-    // 17:00 - 18:30 for regular days
-    return getRandomTime(17, 18, 0, 30);
-  }
-}
-
-function getRandomTime(startHour, endHour, startMinutes = 0, endMinutes = 59) {
+function getRandomTime(startHour, endHour) {
   const hour = Math.floor(Math.random() * (endHour - startHour + 1)) + startHour;
-  const minutes =
-    hour === startHour
-      ? Math.floor(Math.random() * (60 - startMinutes) + startMinutes)
-      : Math.floor(Math.random() * (endMinutes + 1));
-  return `${String(hour).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+  const minutes = Math.floor(Math.random() * 2) * 30; // Randomize 0 or 30 minutes
+  return `${String(hour).padStart(2, "0")}:${String(minutes).padStart(2, "0")}`;
 }
 
 async function submitHours(day) {
-  const isHolidayEve = day.innerText.includes('Holiday Eve');
-  day.querySelector('a.insert-row').click();
-  const insertRow = await waitFor('tr.insert-row');
+  const isHolidayEve = day.innerText.includes("Holiday Eve"); // Check if it's Holiday Eve
+  const isHoliday = day.innerText.includes("Holiday"); // Ignore holidays
+
+  if (isHoliday) {
+    console.log("Skipping holiday:", day.innerText.trim());
+    return;
+  }
+
+  day.querySelector("a.insert-row").click();
+  const insertRow = await waitFor("tr.insert-row");
 
   // Generate check-in and check-out times
-  const checkInTime = getCheckInTime(isHolidayEve);
-  const checkOutTime = getCheckOutTime(isHolidayEve);
+  const checkInTime = getRandomTime(7, 8); // Check-in: 7:30 to 8:30
+  let checkOutTime;
 
-  insertRow.querySelector('input.checkin-str').value = checkInTime;
-  insertRow.querySelector('input.checkout-str').value = checkOutTime;
-  insertRow.querySelector('button.inline-confirm').click();
+  if (isHolidayEve) {
+    // Holiday Eve: Check-out 13:30 to 14:30
+    checkOutTime = getRandomTime(13, 14);
+  } else {
+    // Regular Days: Check-out 17:00 to 18:30
+    checkOutTime = getRandomTime(17, 18);
+  }
 
-  await sleep(1000); // Wait for UI update
+  // Update the fields
+  insertRow.querySelector("input.checkin-str").value = checkInTime;
+  insertRow.querySelector("input.checkout-str").value = checkOutTime;
+  insertRow.querySelector("button.inline-confirm").click();
+
+  await sleep(1000); // Wait for UI to update
 }
 
 async function fillMonth() {
@@ -79,7 +83,7 @@ async function fillMonth() {
     missingDays = getMissingDays(nonRestDays);
   }
 
-  console.log('All missing days have been filled.');
+  console.log("All missing days have been filled.");
 }
 
 // To use the script, run:
