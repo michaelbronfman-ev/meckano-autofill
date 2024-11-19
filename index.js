@@ -26,7 +26,6 @@ function getMissingDays(nonRestDays) {
     const isMissing = tr.querySelector('.missing')?.innerText === '+';
     const isHoliday = tr.innerText.includes('Holiday');
     const isHolidayEve = tr.innerText.includes('Holiday Eve');
-    console.log(`[DEBUG] Day Text: ${tr.innerText}, isMissing: ${isMissing}, isHoliday: ${isHoliday}, isHolidayEve: ${isHolidayEve}`);
     return isMissing && (!isHoliday || isHolidayEve); // Include Holiday Eve, exclude Holidays
   });
 }
